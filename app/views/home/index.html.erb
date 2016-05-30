@@ -1,0 +1,20 @@
+<div class="app">
+	<div id="map"></div>
+	<script>
+	  function initMap() {
+	  	navigator.geolocation.getCurrentPosition(initialize);
+	  }
+	  function initialize(location) {
+	    var mapDiv = document.getElementById('map');
+	    var map = new google.maps.Map(mapDiv, {
+	      center: {lat: location.coords.latitude, lng: location.coords.longitude},
+	      zoom: 13
+	    });
+	  }
+
+	</script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap"
+	    async defer>
+	</script>
+	<ui-view></ui-view>
+</div>
