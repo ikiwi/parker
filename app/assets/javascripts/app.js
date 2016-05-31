@@ -1,5 +1,5 @@
 var app = angular.module('parker', ['ui.router']);
-
+/*
 app.config(function($stateProvider, $urlRouterProvider) {
   //
   // For any unmatched url, redirect to /
@@ -16,6 +16,7 @@ app.config(function($stateProvider, $urlRouterProvider) {
 });
 
 app.controller('homeCtrl', function ($scope, $http) {
+
   $http.get("/spots").then(
     function (success) {
       console.log(success);
@@ -68,5 +69,5 @@ app.controller('homeCtrl', function ($scope, $http) {
 		}
 	);
   }
-
 });
+*/
