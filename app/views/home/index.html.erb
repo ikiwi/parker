@@ -1,6 +1,8 @@
 <div class="app">
 	<div id="map"></div>
 	<script>
+		var markers = [];
+
 		/* spot holder */
 		function initMap() {
 			navigator.geolocation.getCurrentPosition(initialize);
@@ -72,6 +74,7 @@
 				label: label,
 				map: map
 			});
+			markers.push(marker);
 		}
 
 		function addParking(lat, lng, map) {
@@ -173,9 +176,20 @@
 						if (cur < min)
 							idx = i
 					}
+					clearMarkers()
 					addMarker(result.spots[idx].latitude, result.spots[idx].longitude, map, 'T')
 		  		}
 		  	});
+		}
+
+		function setMapOnAll(map) {
+			for (var i = 0; i < markers.length; i++) {
+				markers[i].setMap(map);
+		 	}
+		}
+
+		function clearMarkers() {
+			setMapOnAll(null);
 		}
 
 		function findSpot(geocoding, map) {
