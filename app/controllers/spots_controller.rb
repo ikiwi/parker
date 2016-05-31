@@ -12,8 +12,8 @@ class SpotsController < ApplicationController
 	end
 
 	def destroy
-		Spot.find_by_id(params[:id]).destroy
-		redirect_to root_path
+		spot = Spot.where(user_id: params[:user_id]).destroy_all
+		render json: spot, except: [:created_at, :updated_at]
 	end
 
 	private

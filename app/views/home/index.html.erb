@@ -28,8 +28,11 @@
 		  });
 
 			var geocoding  = new google.maps.Geocoder();
-			$("#submit_button_geocoding").click(function(){
+			$("#search_button_geocoding").click(function(){
 			  codeAddress(geocoding, map);
+			});
+			$("#release_button_geocoding").click(function(){
+			  releaseSpot();
 			});
 		}
 
@@ -78,6 +81,19 @@
 		  }
 		}
 
+		function releaseSpot() {
+		  	$.ajax({
+		  		url: '/spots', 
+		  		type: 'DELETE',
+		  		data: {
+		  			user_id: 1
+		  		},
+		  		success: function(result) {
+		  			console.log(result)
+		  		}
+		  	});
+		}
+
 		function update() {
 		  var path = [marker1.getPosition(), marker2.getPosition()];
 		  poly.setPath(path);
@@ -97,7 +113,7 @@
 	</script>
 
 	<input id="search_box_geocoding" type="text" size="50" placeholder="where's your car?">
-	<button type="submit" id="submit_button_geocoding">Search</button>
+	<button type="submit" id="search_button_geocoding">Search</button>
+	<button type="submit" id="release_button_geocoding">Release Spot</button>
 
-	<ui-view></ui-view>
 </div>
