@@ -27,13 +27,17 @@
 		    addParking(event.latLng, map);
 		  });
 
+			var geocoding  = new google.maps.Geocoder();
+			$("#submit_button_geocoding").click(function(){
+			  codeAddress(geocoding, map);
+			});
 		}
 
 		function addParking(latLng, map) {
 		  // Add the marker at the clicked location, and add the next-available label
 		  // from the array of alphabetical characters.
 		  var marker = new google.maps.Marker({
-		    position: location,
+		    position: latLng,
 		    label: "Parking",
 		    map: map
 		  });
@@ -55,6 +59,25 @@
 			});
 		}
 
+		function codeAddress(geocoding, map) {
+		  var address = $("#search_box_geocoding").val();
+		  if(address.length > 0){
+		    geocoding.geocode({'address': address},function(results, status){
+		      if(status == google.maps.GeocoderStatus.OK){
+		        map.setCenter(results[0].geometry.location);
+		        var marker = new google.maps.Marker({
+		          map: map,
+		          position: results[0].geometry.location
+		        });
+		      } else {
+		        alert("Geocode was not successful for the following reason: " + status);
+		      }
+		    });
+		  } else {
+		    alert("Search field can't be blank");
+		  }
+		}
+
 		function update() {
 		  var path = [marker1.getPosition(), marker2.getPosition()];
 		  poly.setPath(path);
@@ -65,9 +88,16 @@
 		  document.getElementById('destination').value = path[1].toString();
 		}
 
+
 	</script>
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap&libraries=geometry"
 	    async defer>
+
+
 	</script>
+
+	<input id="search_box_geocoding" type="text" size="50" placeholder="where's your car?">
+	<button type="submit" id="submit_button_geocoding">Search</button>
+
 	<ui-view></ui-view>
 </div>
