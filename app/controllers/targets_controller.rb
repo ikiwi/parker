@@ -6,7 +6,9 @@ class TargetsController < ApplicationController
 	end
 
 	def create
-		target = Target.new(target_params)
+		target = Target.where(user_id: params[:user_id]).first_or_create
+		target.latitude = params[:latitude]
+		target.longitude = params[:longitude]
 		target.save!
 		render json: {target: target, total: Target.count}, except: [:created_at, :updated_at]
 	end
@@ -15,10 +17,4 @@ class TargetsController < ApplicationController
 		Target.find_by_id(params[:id]).destroy
 		redirect_to root_path
 	end
-
-	private
-	def target_params
-		params.required(:target).permit(:user_id, :latitude, :longitude)
-	end
-
 end

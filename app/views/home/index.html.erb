@@ -1,6 +1,7 @@
 <div class="app">
 	<div id="map"></div>
 	<script>
+		/* spot holder */
 		function initMap() {
 			navigator.geolocation.getCurrentPosition(initialize);
 		}
@@ -33,9 +34,20 @@
 			$("#search_button_geocoding").click(function(){
 				codeAddress(geocoding, map);
 			});
+			$("#find_button_geocoding").click(function(){
+				findSpot(geocoding, map);
+			});
 			$("#release_button_geocoding").click(function(){
 				releaseSpot();
 			});
+			$("#all_button_geocoding").click(function(){
+			  	allSpots()
+			});
+
+		}
+
+		function allSpots() {
+			location.reload();
 		}
 
 		function initParking(map) {
@@ -48,22 +60,25 @@
 		  		success: function(result) {
 		  			console.log(result.spots)
 					for (var i=0; i < result.spots.length; i++) {
-						addMarker(result.spots[i].latitude, result.spots[i].longitude, map)
+						addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P')
 					}
 		  		}
 		  	});
 		}
 
-		function addMarker(lat, lng, map) {
+		function addMarker(lat, lng, map, label) {
 			var marker = new google.maps.Marker({
 				position: {lat: lat, lng: lng},
-				label: "Parking",
+				label: label,
 				map: map
 			});
 		}
 
 		function addParking(lat, lng, map) {
-			addMarker(lat, lng, map);
+			addMarker(lat, lng, map, 'P');
+
+			// TODO: remove existing parking spot 
+			// since each user should have at most one
 
 		  	$.post("/spots", 
 		  	{
@@ -115,16 +130,72 @@
 		  	});
 		  	location.reload();
 		}
+		/* spot holder */
 
-		function update() {
-		  var path = [marker1.getPosition(), marker2.getPosition()];
-		  poly.setPath(path);
-		  geodesicPoly.setPath(path);
-		  var heading = google.maps.geometry.spherical.computeHeading(path[0], path[1]);
-		  document.getElementById('heading').value = heading;
-		  document.getElementById('origin').value = path[0].toString();
-		  document.getElementById('destination').value = path[1].toString();
+		/* spot searcher */
+		function addTarget(lat, lng, map) {
+
+		  	$.post("/targets", 
+		  	{
+		  		user_id: 1,
+		  		latitude: lat,
+		  		longitude: lng
+		  	},
+		  	function(data, status) {
+		  		if (status == "success") {
+				  console.log(data.total);
+				}
+				else {
+				  console.log(status);
+				}
+			});
 		}
+
+		function findClosest(lat, lng, map) {
+		  	$.ajax({
+		  		url: '/spots', 
+		  		type: 'GET',
+		  		data: {
+		  			user_id: 1
+		  		},
+		  		success: function(result) {
+		  			if (result.spots.length == 0) {
+				  		return null
+				  	}
+				  	var cur
+				  	var point1 = new google.maps.LatLng({lat: lat, lng: lng})
+				  	var point2 = new google.maps.LatLng({lat: result.spots[0].latitude, lng: result.spots[0].longitude})
+		  			var min = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
+		  			var idx = 0
+					for (var i=1; i < result.spots.length; i++) {
+				  		point2 = new google.maps.LatLng({lat: result.spots[i].latitude, lng: result.spots[i].longitude})
+			  			cur = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
+						if (cur < min)
+							idx = i
+					}
+					addMarker(result.spots[idx].latitude, result.spots[idx].longitude, map, 'T')
+		  		}
+		  	});
+		}
+
+		function findSpot(geocoding, map) {
+			var address = $("#search_box_geocoding").val();
+			if(address.length > 0){
+				geocoding.geocode({'address': address},function(results, status){
+					if(status == google.maps.GeocoderStatus.OK){
+						var lat = results[0].geometry.location.lat()
+						var lng = results[0].geometry.location.lng()
+						addTarget(lat, lng, map)
+						findClosest(lat, lng, map)
+					} else {
+						alert("Geocode was not successful for the following reason: " + status);
+					}
+				});
+			} else {
+				alert("Search field can't be blank");
+			}
+		}
+		/* spot searcher */
 
 	</script>
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap&libraries=geometry"
@@ -134,8 +205,8 @@
 	</script>
 
 	<input id="search_box_geocoding" type="text" size="50" placeholder="Address">
-	<button type="submit" id="search_button_geocoding">Search</button>
-	<br>
+	<button type="submit" id="search_button_geocoding">Search Address</button>
+	<button type="submit" id="find_button_geocoding">Closest Spot</button>
+	<button type="submit" id="all_button_geocoding">All Availalbe Spots</button>
 	<button type="submit" id="release_button_geocoding">Release Spot</button>
-
 </div>
