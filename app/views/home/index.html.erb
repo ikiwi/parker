@@ -1,19 +1,72 @@
 <div class="app">
 	<div id="map"></div>
 	<script>
-	  function initMap() {
-	  	navigator.geolocation.getCurrentPosition(initialize);
-	  }
-	  function initialize(location) {
-	    var mapDiv = document.getElementById('map');
-	    var map = new google.maps.Map(mapDiv, {
-	      center: {lat: location.coords.latitude, lng: location.coords.longitude},
-	      zoom: 13
-	    });
-	  }
+		var marker1, marker2;
+		var poly, geodesicPoly;
+		function initMap() {
+			navigator.geolocation.getCurrentPosition(initialize);
+		}
+		function initialize(location) {
+			var mapDiv = document.getElementById('map');
+			var map = new google.maps.Map(mapDiv, {
+			  center: {lat: location.coords.latitude, lng: location.coords.longitude},
+			  zoom: 13
+			});
+			map.controls[google.maps.ControlPosition.TOP_CENTER].push(
+				document.getElementById('info'));
+
+		  var marker = new google.maps.Marker({
+		    position: {lat: location.coords.latitude, lng: location.coords.longitude},
+		    map: map,
+		    title: 'Parking'
+		  });
+
+		  marker.setMap(map);
+
+		  google.maps.event.addListener(map, 'click', function(event) {
+		    addParking(event.latLng, map);
+		  });
+
+		}
+
+		function addParking(latLng, map) {
+		  // Add the marker at the clicked location, and add the next-available label
+		  // from the array of alphabetical characters.
+		  var marker = new google.maps.Marker({
+		    position: location,
+		    label: "Parking",
+		    map: map
+		  });
+		  	$.post("/spots", 
+		  	{
+		  		spot: {
+			  		user_id: 1,
+			  		latitude: latLng.lat(),
+			  		longitude: latLng.lng()
+			  	}
+		  	},
+		  	function(data, status) {
+		  		if (status == "success") {
+				  console.log(data.total);
+				}
+				else {
+				  console.log(status);
+				}
+			});
+		}
+
+		function update() {
+		  var path = [marker1.getPosition(), marker2.getPosition()];
+		  poly.setPath(path);
+		  geodesicPoly.setPath(path);
+		  var heading = google.maps.geometry.spherical.computeHeading(path[0], path[1]);
+		  document.getElementById('heading').value = heading;
+		  document.getElementById('origin').value = path[0].toString();
+		  document.getElementById('destination').value = path[1].toString();
+		}
 
 	</script>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap"
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap&libraries=geometry"
 	    async defer>
 	</script>
 	<ui-view></ui-view>

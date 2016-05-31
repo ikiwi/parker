@@ -14,3 +14,21 @@
 //= require jquery_ujs
 //= require turbolinks
 //= require_tree .
+
+function setAvailable(location) {
+	console.log(location)
+
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', "/spots", false);
+	xhr.send();
+
+	$http.post("/spots", {user_id: 1, latitude: location.coords.latitude, longitude: location.coords.longitude}).then(
+		function (success) {
+		  console.log(success);
+		  $scope.totalAvailable = success.data.total;
+		},
+		function (error) {
+		  console.log(error);
+		}
+	);
+}
