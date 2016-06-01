@@ -2,6 +2,7 @@
 	<div id="map"></div>
 	<script>
 		var markers = [];
+		var isHolder = true;
 
 		/* spot holder */
 		function initMap() {
@@ -15,7 +16,7 @@
 				center: {lat: location.coords.latitude, lng: location.coords.longitude},
 				zoom: 13
 			});
-			var geocoding  = new google.maps.Geocoder();
+
 			var marker = new google.maps.Marker({
 				position: {lat: location.coords.latitude, lng: location.coords.longitude},
 				map: map,
@@ -27,12 +28,18 @@
 				document.getElementById('info'));
 
 			marker.setMap(map);
-			initParking(map)
+			initParking(map);
+			initButtons();
 
 			google.maps.event.addListener(map, 'click', function(event) {
 				addParking(event.latLng.lat(), event.latLng.lng(), map);
 			});
 
+		}
+
+		function initButtons() {
+			var geocoding  = new google.maps.Geocoder();
+			
 			$("#search_button_geocoding").click(function(){
 				codeAddress(geocoding, map);
 			});
@@ -43,8 +50,30 @@
 				clearMarkers()
 			  	setMapOnAll(map)
 			});
-
+			$("#is_parking_holder").click(function() {
+				isHolder = true;
+				hideButtons()
+			});
+			$("#is_parking_finder").click(function() {
+				isHolder = false;
+				showButtons()
+			});
 		}
+
+		function hideButtons() {
+			document.getElementById("find_button_geocoding").style.display='none';
+			document.getElementById("all_button_geocoding").style.display='none';
+			document.getElementById("is_parking_holder").style.display='none';
+			document.getElementById("is_parking_finder").style.display='block';
+		}
+
+		function showButtons(){
+			document.getElementById("find_button_geocoding").style.display='block';
+			document.getElementById("all_button_geocoding").style.display='block';
+ 			document.getElementById("is_parking_holder").style.display='block';
+			document.getElementById("is_parking_finder").style.display='none';
+
+ 		}
 
 		function initParking(map) {
 		  	$.ajax({
@@ -74,19 +103,22 @@
 			});
 			markers.push(marker);
 			marker.addListener('click', function() {
-				/* #TODO# if current_user (parking holder), release P
-				for (var i=0; i < markers.length; i++) {
-					if (markers[i] === marker) {
-						markers.splice(i, 1)
-						marker.setMap(null)
-						releaseSpot(lat, lng, map)
+				if (isHolder) {
+					// if current_user (parking holder), release P
+					for (var i=0; i < markers.length; i++) {
+						if (markers[i] === marker) {
+							markers.splice(i, 1)
+							marker.setMap(null)
+							releaseSpot(lat, lng, map)
+						}
 					}
-				}*/
-				// otherwise (parking finder), claim it
-				if (marker.getLabel() == 'M')
-					unclaimSpot(title, marker)
-				else
-					claimSpot(title, marker)
+				} else {
+					// otherwise (parking finder), claim it
+					if (marker.getLabel() == 'M')
+						unclaimSpot(title, marker)
+					else
+						claimSpot(title, marker)
+				}
 			})
 		}
 
@@ -286,8 +318,12 @@
 
 	</script>
 
-	<input id="search_box_geocoding" type="text" size="50" placeholder="Address">
-	<button type="submit" id="search_button_geocoding">Address Lookup</button>
-	<button type="submit" id="find_button_geocoding">Find Nearest Available Spot</button>
-	<button type="submit" id="all_button_geocoding">All Availalbe Spots</button>
+	<div>
+		<button type="submit" id="is_parking_holder" style="display:none">Switch To Parking Holder</button>
+		<button type="submit" id="is_parking_finder">Switch To Parking Finder</button>
+		<input id="search_box_geocoding" type="text" size="50" placeholder="Address">
+		<button type="submit" id="search_button_geocoding">Address Lookup</button>
+		<button type="submit" id="find_button_geocoding" style="display:none">Find Nearest Available Spot</button>
+		<button type="submit" id="all_button_geocoding" style="display:none">All Availalbe Spots</button>
+	</div>
 </div>
