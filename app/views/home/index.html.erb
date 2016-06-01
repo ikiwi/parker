@@ -1,329 +1,327 @@
-<div class="app">
-	<div id="map"></div>
-	<script>
-		var markers = [];
-		var isHolder = true;
+<div id="map"></div>
+<script>
+	var markers = [];
+	var isHolder = true;
 
-		/* spot holder */
-		function initMap() {
-			navigator.geolocation.getCurrentPosition(initialize);
-		}
+	/* spot holder */
+	function initMap() {
+		navigator.geolocation.getCurrentPosition(initialize);
+	}
 
-		function initialize(location) {
-			var mapDiv = document.getElementById('map');
-			var spots = []
-			var map = new google.maps.Map(mapDiv, {
-				center: {lat: location.coords.latitude, lng: location.coords.longitude},
-				zoom: 13
-			});
+	function initialize(location) {
+		var mapDiv = document.getElementById('map');
+		var spots = []
+		var map = new google.maps.Map(mapDiv, {
+			center: {lat: location.coords.latitude, lng: location.coords.longitude},
+			zoom: 13
+		});
 
-			var marker = new google.maps.Marker({
-				position: {lat: location.coords.latitude, lng: location.coords.longitude},
-				map: map,
-				title: 'Your current location',
-				label: 'U'
-			});
+		var marker = new google.maps.Marker({
+			position: {lat: location.coords.latitude, lng: location.coords.longitude},
+			map: map,
+			title: 'Your current location',
+			label: 'U'
+		});
 
-			map.controls[google.maps.ControlPosition.TOP_CENTER].push(
-				document.getElementById('info'));
+		map.controls[google.maps.ControlPosition.TOP_CENTER].push(
+			document.getElementById('info'));
 
-			marker.setMap(map);
-			initParking(map);
-			initButtons();
+		marker.setMap(map);
+		initParking(map);
+		initButtons();
 
-			google.maps.event.addListener(map, 'click', function(event) {
-				addParking(event.latLng.lat(), event.latLng.lng(), map);
-			});
+		google.maps.event.addListener(map, 'click', function(event) {
+			addParking(event.latLng.lat(), event.latLng.lng(), map);
+		});
 
-		}
+	}
 
-		function initButtons() {
-			var geocoding  = new google.maps.Geocoder();
-			
-			$("#search_button_geocoding").click(function(){
-				codeAddress(geocoding, map);
-			});
-			$("#find_button_geocoding").click(function(){
-				findSpot(geocoding, map);
-			});
-			$("#all_button_geocoding").click(function(){
-				clearMarkers()
-			  	setMapOnAll(map)
-			});
-			$("#is_parking_holder").click(function() {
-				isHolder = true;
-				hideButtons()
-			});
-			$("#is_parking_finder").click(function() {
-				isHolder = false;
-				showButtons()
-			});
-		}
+	function initButtons() {
+		var geocoding  = new google.maps.Geocoder();
 
-		function hideButtons() {
-			document.getElementById("find_button_geocoding").style.display='none';
-			document.getElementById("all_button_geocoding").style.display='none';
-			document.getElementById("is_parking_holder").style.display='none';
-			document.getElementById("is_parking_finder").style.display='block';
-		}
-
-		function showButtons(){
-			document.getElementById("find_button_geocoding").style.display='block';
-			document.getElementById("all_button_geocoding").style.display='block';
- 			document.getElementById("is_parking_holder").style.display='block';
-			document.getElementById("is_parking_finder").style.display='none';
-
- 		}
-
-		function initParking(map) {
-		  	$.ajax({
-		  		url: '/spots', 
-		  		type: 'GET',
-		  		data: {
-		  			user_id: 1
-		  		},
-		  		success: function(result) {
-		  			console.log(result.spots)
-					for (var i=0; i < result.spots.length; i++) {
-						addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P', result.spots[i].id.toString())
-					}
-					if (result.targets.length > 0) {
-						addMarker(result.targets[0].latitude, result.targets[0].longitude, map, 'M', result.targets[0].id.toString())
-					}
-		  		}
-		  	});
-		}
-
-		function addMarker(lat, lng, map, label, title) {
-			var marker = new google.maps.Marker({
-				position: {lat: lat, lng: lng},
-				label: label,
-				map: map,
-				title: title
-			});
-			markers.push(marker);
-			marker.addListener('click', function() {
-				if (isHolder) {
-					// if current_user (parking holder), release P
-					for (var i=0; i < markers.length; i++) {
-						if (markers[i] === marker) {
-							markers.splice(i, 1)
-							marker.setMap(null)
-							releaseSpot(lat, lng, map)
-						}
-					}
-				} else {
-					// otherwise (parking finder), claim it
-					if (marker.getLabel() == 'M')
-						unclaimSpot(title, marker)
-					else
-						claimSpot(title, marker)
-				}
-			})
-		}
-
-		function addParking(lat, lng, map) {
-
-			// TODO: remove existing parking spot 
-			// since each user should have at most one
-
-		  	$.post("/spots", 
-		  	{
-		  		spot: {
-			  		user_id: 1,
-			  		latitude: lat,
-			  		longitude: lng
-			  	}
-		  	},
-		  	function(data, status) {
-		  		if (status == "success") {
-					addMarker(lat, lng, map, 'P', data.spot.id.toString());
-				}
-				else {
-				  console.log(status);
-				}
-			});
-		}
-
-		function codeAddress(geocoding, map) {
-			var address = $("#search_box_geocoding").val();
-			if(address.length > 0){
-				geocoding.geocode({'address': address},function(results, status){
-					if(status == google.maps.GeocoderStatus.OK){
-						map.setCenter(results[0].geometry.location);
-						var marker = new google.maps.Marker({
-							map: map,
-							position: results[0].geometry.location
-						});
-					} else {
-						alert("Geocode was not successful for the following reason: " + status);
-					}
-				});
-			} else {
-				alert("Search field can't be blank");
-			}
-		}
-
-		// eventually releaseSpot based on user_id instead of lat/lng,
-		// since each user can have at most one spot
-		function releaseSpot(lat, lng, map) {
-		  	$.ajax({
-		  		url: '/spots', 
-		  		type: 'DELETE',
-		  		data: {
-		  			lat: lat,
-		  			lng: lng
-		  		},
-		  		success: function(result) {
-		  			console.log(result)
-		  		}
-		  	});
+		$("#search_button_geocoding").click(function(){
+			codeAddress(geocoding, map);
+		});
+		$("#find_button_geocoding").click(function(){
+			findSpot(geocoding, map);
+		});
+		$("#all_button_geocoding").click(function(){
+			clearMarkers()
 		  	setMapOnAll(map)
-		}
-		/* spot holder */
+		});
+		$("#is_parking_holder").click(function() {
+			isHolder = true;
+			hideButtons()
+		});
+		$("#is_parking_finder").click(function() {
+			isHolder = false;
+			showButtons()
+		});
+	}
 
-		/* spot searcher */
-		function claimSpot(spot_id, marker) {
-		  	$.ajax({
-		  		url: '/spots', 
-		  		type: 'GET',
-		  		data: {
-		  			user_id: 1
-		  		},
-		  		success: function(result) {
-		  			console.log(result.targets)
-		  			if (result.targets.length) {
-			  			unmarkSpot(result.targets[0])
-			  		}
-					saveTarget(spot_id, 1)
-					marker.setLabel('M')
-		  		}
-		  	});
+	function hideButtons() {
+		document.getElementById("find_button_geocoding").style.display='none';
+		document.getElementById("all_button_geocoding").style.display='none';
+		document.getElementById("is_parking_holder").style.display='none';
+		document.getElementById("is_parking_finder").style.display='block';
+	}
+
+	function showButtons(){
+		document.getElementById("find_button_geocoding").style.display='block';
+		document.getElementById("all_button_geocoding").style.display='block';
+			document.getElementById("is_parking_holder").style.display='block';
+		document.getElementById("is_parking_finder").style.display='none';
+
 		}
 
-		function unclaimSpot(spot_id, marker) {
-			saveTarget(spot_id, null)
-			marker.setLabel('P')
-		}
+	function initParking(map) {
+	  	$.ajax({
+	  		url: '/spots', 
+	  		type: 'GET',
+	  		data: {
+	  			user_id: 1
+	  		},
+	  		success: function(result) {
+	  			console.log(result.spots)
+				for (var i=0; i < result.spots.length; i++) {
+					addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P', result.spots[i].id.toString())
+				}
+				if (result.targets.length > 0) {
+					addMarker(result.targets[0].latitude, result.targets[0].longitude, map, 'M', result.targets[0].id.toString())
+				}
+	  		}
+	  	});
+	}
 
-		function unmarkSpot(target) {
-		  	for (var i=0; i < markers.length; i++) {
-		  		if (markers[i].getTitle() == target.id.toString())
-		  			markers[i].setLabel('P')
+	function addMarker(lat, lng, map, label, title) {
+		var marker = new google.maps.Marker({
+			position: {lat: lat, lng: lng},
+			label: label,
+			map: map,
+			title: title
+		});
+		markers.push(marker);
+		marker.addListener('click', function() {
+			if (isHolder) {
+				// if current_user (parking holder), release P
+				for (var i=0; i < markers.length; i++) {
+					if (markers[i] === marker) {
+						markers.splice(i, 1)
+						marker.setMap(null)
+						releaseSpot(lat, lng, map)
+					}
+				}
+			} else {
+				// otherwise (parking finder), claim it
+				if (marker.getLabel() == 'M')
+					unclaimSpot(title, marker)
+				else
+					claimSpot(title, marker)
 			}
-		  	saveTarget(target.id, null)
-		}
+		})
+	}
 
-		function saveTarget(spot_id, target_id) {
-		  	$.ajax({
-		  		url: '/spots/' + spot_id, 
-		  		type: 'PUT',
-		  		data: {
-		  			target_id: target_id
-		  		},
-		  		success: function(result) {
-		  			console.log(result)
-		  		}
-		  	});
-		}
+	function addParking(lat, lng, map) {
 
-		function addTarget(lat, lng, map) {
+		// TODO: remove existing parking spot 
+		// since each user should have at most one
 
-		  	$.post("/targets", 
-		  	{
+	  	$.post("/spots", 
+	  	{
+	  		spot: {
 		  		user_id: 1,
 		  		latitude: lat,
 		  		longitude: lng
-		  	},
-		  	function(data, status) {
-		  		if (status == "success") {
-				  console.log(data.total);
-				}
-				else {
-				  console.log(status);
+		  	}
+	  	},
+	  	function(data, status) {
+	  		if (status == "success") {
+				addMarker(lat, lng, map, 'P', data.spot.id.toString());
+			}
+			else {
+			  console.log(status);
+			}
+		});
+	}
+
+	function codeAddress(geocoding, map) {
+		var address = $("#search_box_geocoding").val();
+		if(address.length > 0){
+			geocoding.geocode({'address': address},function(results, status){
+				if(status == google.maps.GeocoderStatus.OK){
+					map.setCenter(results[0].geometry.location);
+					var marker = new google.maps.Marker({
+						map: map,
+						position: results[0].geometry.location
+					});
+				} else {
+					alert("Geocode was not successful for the following reason: " + status);
 				}
 			});
+		} else {
+			alert("Search field can't be blank");
 		}
+	}
 
-		function findNearest(lat, lng, map) {
-		  	$.ajax({
-		  		url: '/spots', 
-		  		type: 'GET',
-		  		data: {
-		  			user_id: 1
-		  		},
-		  		success: function(result) {
-		  			if (result.spots.length == 0) {
-				  		return null
-				  	}
-				  	var cur
-				  	var point1 = new google.maps.LatLng({lat: lat, lng: lng})
-				  	var point2 = new google.maps.LatLng({lat: result.spots[0].latitude, lng: result.spots[0].longitude})
-		  			var min = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
-		  			var idx = 0 // index into spots
-					for (var i=1; i < result.spots.length; i++) {
-				  		point2 = new google.maps.LatLng({lat: result.spots[i].latitude, lng: result.spots[i].longitude})
-			  			cur = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
-						if (cur < min)
-							idx = i
-					}
-					setMapExcept(map, idx)
+	// eventually releaseSpot based on user_id instead of lat/lng,
+	// since each user can have at most one spot
+	function releaseSpot(lat, lng, map) {
+	  	$.ajax({
+	  		url: '/spots', 
+	  		type: 'DELETE',
+	  		data: {
+	  			lat: lat,
+	  			lng: lng
+	  		},
+	  		success: function(result) {
+	  			console.log(result)
+	  		}
+	  	});
+	  	setMapOnAll(map)
+	}
+	/* spot holder */
+
+	/* spot searcher */
+	function claimSpot(spot_id, marker) {
+	  	$.ajax({
+	  		url: '/spots', 
+	  		type: 'GET',
+	  		data: {
+	  			user_id: 1
+	  		},
+	  		success: function(result) {
+	  			console.log(result.targets)
+	  			if (result.targets.length) {
+		  			unmarkSpot(result.targets[0])
 		  		}
-		  	});
-		}
+				saveTarget(spot_id, 1)
+				marker.setLabel('M')
+	  		}
+	  	});
+	}
 
-		function setMapExcept(map, idx) {
-			for (var i=0; i < markers.length; i++) {
-				if (idx == i)
-					continue
-				markers[i].setMap(null)
+	function unclaimSpot(spot_id, marker) {
+		saveTarget(spot_id, null)
+		marker.setLabel('P')
+	}
+
+	function unmarkSpot(target) {
+	  	for (var i=0; i < markers.length; i++) {
+	  		if (markers[i].getTitle() == target.id.toString())
+	  			markers[i].setLabel('P')
+		}
+	  	saveTarget(target.id, null)
+	}
+
+	function saveTarget(spot_id, target_id) {
+	  	$.ajax({
+	  		url: '/spots/' + spot_id, 
+	  		type: 'PUT',
+	  		data: {
+	  			target_id: target_id
+	  		},
+	  		success: function(result) {
+	  			console.log(result)
+	  		}
+	  	});
+	}
+
+	function addTarget(lat, lng, map) {
+
+	  	$.post("/targets", 
+	  	{
+	  		user_id: 1,
+	  		latitude: lat,
+	  		longitude: lng
+	  	},
+	  	function(data, status) {
+	  		if (status == "success") {
+			  console.log(data.total);
 			}
-		}
+			else {
+			  console.log(status);
+			}
+		});
+	}
 
-		function setMapOnAll(map) {
-			for (var i = 0; i < markers.length; i++) {
-				if (markers[i].getMap() == null) {
-					markers[i].setMap(map);
+	function findNearest(lat, lng, map) {
+	  	$.ajax({
+	  		url: '/spots', 
+	  		type: 'GET',
+	  		data: {
+	  			user_id: 1
+	  		},
+	  		success: function(result) {
+	  			if (result.spots.length == 0) {
+			  		return null
+			  	}
+			  	var cur
+			  	var point1 = new google.maps.LatLng({lat: lat, lng: lng})
+			  	var point2 = new google.maps.LatLng({lat: result.spots[0].latitude, lng: result.spots[0].longitude})
+	  			var min = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
+	  			var idx = 0 // index into spots
+				for (var i=1; i < result.spots.length; i++) {
+			  		point2 = new google.maps.LatLng({lat: result.spots[i].latitude, lng: result.spots[i].longitude})
+		  			cur = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
+					if (cur < min)
+						idx = i
 				}
-		 	}
-		}
+				setMapExcept(map, idx)
+	  		}
+	  	});
+	}
 
-		function clearMarkers() {
-			setMapOnAll(null);
+	function setMapExcept(map, idx) {
+		for (var i=0; i < markers.length; i++) {
+			if (idx == i)
+				continue
+			markers[i].setMap(null)
 		}
+	}
 
-		function findSpot(geocoding, map) {
-			var address = $("#search_box_geocoding").val();
-			if(address.length > 0){
-				geocoding.geocode({'address': address},function(results, status){
-					if(status == google.maps.GeocoderStatus.OK){
-						var lat = results[0].geometry.location.lat()
-						var lng = results[0].geometry.location.lng()
-						addTarget(lat, lng, map)
-						findNearest(lat, lng, map)
-					} else {
-						alert("Geocode was not successful for the following reason: " + status);
-					}
-				});
-			} else {
-				alert("Search field can't be blank");
+	function setMapOnAll(map) {
+		for (var i = 0; i < markers.length; i++) {
+			if (markers[i].getMap() == null) {
+				markers[i].setMap(map);
 			}
+	 	}
+	}
+
+	function clearMarkers() {
+		setMapOnAll(null);
+	}
+
+	function findSpot(geocoding, map) {
+		var address = $("#search_box_geocoding").val();
+		if(address.length > 0){
+			geocoding.geocode({'address': address},function(results, status){
+				if(status == google.maps.GeocoderStatus.OK){
+					var lat = results[0].geometry.location.lat()
+					var lng = results[0].geometry.location.lng()
+					addTarget(lat, lng, map)
+					findNearest(lat, lng, map)
+				} else {
+					alert("Geocode was not successful for the following reason: " + status);
+				}
+			});
+		} else {
+			alert("Search field can't be blank");
 		}
-		/* spot searcher */
+	}
+	/* spot searcher */
 
-	</script>
-	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap&libraries=geometry"
-	    async defer>
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaH688VQ5p8O4BlNxGT_40Nj7Uytf_m5o&callback=initMap&libraries=geometry"
+    async defer>
 
 
-	</script>
+</script>
 
-	<div>
-		<button type="submit" id="is_parking_holder" style="display:none">Switch To Parking Holder</button>
-		<button type="submit" id="is_parking_finder">Switch To Parking Finder</button>
-		<input id="search_box_geocoding" type="text" size="50" placeholder="Address">
-		<button type="submit" id="search_button_geocoding">Address Lookup</button>
-		<button type="submit" id="find_button_geocoding" style="display:none">Find Nearest Available Spot</button>
-		<button type="submit" id="all_button_geocoding" style="display:none">All Availalbe Spots</button>
-	</div>
+<div>
+	<button type="submit" id="is_parking_holder" style="display:none">Switch To Parking Holder</button>
+	<button type="submit" id="is_parking_finder">Switch To Parking Finder</button>
+	<input id="search_box_geocoding" type="text" size="50" placeholder="Address">
+	<button type="submit" id="search_button_geocoding">Address Lookup</button>
+	<button type="submit" id="find_button_geocoding" style="display:none">Find Nearest Available Spot</button>
+	<button type="submit" id="all_button_geocoding" style="display:none">All Availalbe Spots</button>
 </div>
