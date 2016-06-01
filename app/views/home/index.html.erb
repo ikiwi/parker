@@ -2,6 +2,7 @@
 <script>
 	var markers = [];
 	var isHolder = true;
+	var addressMarker
 
 	/* spot holder */
 	function initMap() {
@@ -20,7 +21,8 @@
 			position: {lat: location.coords.latitude, lng: location.coords.longitude},
 			map: map,
 			title: 'Your current location',
-			label: 'U'
+			label: 'U',
+			zIndex: 1
 		});
 
 		map.controls[google.maps.ControlPosition.TOP_CENTER].push(
@@ -28,7 +30,7 @@
 
 		marker.setMap(map);
 		initParking(map);
-		initButtons();
+		initButtons(map);
 
 		google.maps.event.addListener(map, 'click', function(event) {
 			addParking(event.latLng.lat(), event.latLng.lng(), map);
@@ -36,7 +38,7 @@
 
 	}
 
-	function initButtons() {
+	function initButtons(map) {
 		var geocoding  = new google.maps.Geocoder();
 
 		$("#search_button_geocoding").click(function(){
@@ -62,6 +64,7 @@
 	function hideButtons() {
 		document.getElementById("find_button_geocoding").style.display='none';
 		document.getElementById("all_button_geocoding").style.display='none';
+		document.getElementById("search_button_geocoding").style.display='block';
 		document.getElementById("is_parking_holder").style.display='none';
 		document.getElementById("is_parking_finder").style.display='block';
 	}
@@ -69,7 +72,8 @@
 	function showButtons(){
 		document.getElementById("find_button_geocoding").style.display='block';
 		document.getElementById("all_button_geocoding").style.display='block';
-			document.getElementById("is_parking_holder").style.display='block';
+		document.getElementById("search_button_geocoding").style.display='none';
+		document.getElementById("is_parking_holder").style.display='block';
 		document.getElementById("is_parking_finder").style.display='none';
 
 		}
@@ -98,7 +102,8 @@
 			position: {lat: lat, lng: lng},
 			label: label,
 			map: map,
-			title: title
+			title: title,
+			zIndex: 1
 		});
 		markers.push(marker);
 		marker.addListener('click', function() {
@@ -151,10 +156,16 @@
 			geocoding.geocode({'address': address},function(results, status){
 				if(status == google.maps.GeocoderStatus.OK){
 					map.setCenter(results[0].geometry.location);
-					var marker = new google.maps.Marker({
-						map: map,
-						position: results[0].geometry.location
-					});
+					if (!addressMarker) {
+						addressMarker = new google.maps.Marker({
+							map: map,
+							position: results[0].geometry.location,
+							zIndex: 20
+						});
+					} else {
+						addressMarker.setMap(map)
+						addressMarker.setPosition(results[0].geometry.location)
+					}
 				} else {
 					alert("Geocode was not successful for the following reason: " + status);
 				}
