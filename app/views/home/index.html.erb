@@ -43,13 +43,10 @@
 				releaseSpot();
 			});
 			$("#all_button_geocoding").click(function(){
-			  	allSpots()
+				clearMarkers()
+			  	setMapOnAll(map)
 			});
 
-		}
-
-		function allSpots() {
-			location.reload();
 		}
 
 		function initParking(map) {
@@ -169,22 +166,31 @@
 				  	var point1 = new google.maps.LatLng({lat: lat, lng: lng})
 				  	var point2 = new google.maps.LatLng({lat: result.spots[0].latitude, lng: result.spots[0].longitude})
 		  			var min = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
-		  			var idx = 0
+		  			var idx = 0 // index into spots
 					for (var i=1; i < result.spots.length; i++) {
 				  		point2 = new google.maps.LatLng({lat: result.spots[i].latitude, lng: result.spots[i].longitude})
 			  			cur = google.maps.geometry.spherical.computeDistanceBetween(point1, point2)
 						if (cur < min)
 							idx = i
 					}
-					clearMarkers()
-					addMarker(result.spots[idx].latitude, result.spots[idx].longitude, map, 'T')
+					setMapExcept(map, idx)
 		  		}
 		  	});
 		}
 
+		function setMapExcept(map, idx) {
+			for (var i=0; i < markers.length; i++) {
+				if (idx == i)
+					continue
+				markers[i].setMap(null)
+			}
+		}
+
 		function setMapOnAll(map) {
 			for (var i = 0; i < markers.length; i++) {
-				markers[i].setMap(map);
+				if (markers[i].getMap() == null) {
+					markers[i].setMap(map);
+				}
 		 	}
 		}
 
