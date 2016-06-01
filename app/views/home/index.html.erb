@@ -122,7 +122,8 @@
 	}
 
 	function addParking(lat, lng, map) {
-
+		if (isHolder == false)
+			return
 		// TODO: remove existing parking spot 
 		// since each user should have at most one
 
