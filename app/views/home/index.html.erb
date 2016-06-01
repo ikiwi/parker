@@ -59,34 +59,40 @@
 		  		success: function(result) {
 		  			console.log(result.spots)
 					for (var i=0; i < result.spots.length; i++) {
-						addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P')
+						addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P', result.spots[i].id.toString())
+					}
+					if (result.targets.length > 0) {
+						addMarker(result.targets[0].latitude, result.targets[0].longitude, map, 'M', result.targets[0].id.toString())
 					}
 		  		}
 		  	});
 		}
 
-		function addMarker(lat, lng, map, label) {
+		function addMarker(lat, lng, map, label, title) {
 			var marker = new google.maps.Marker({
 				position: {lat: lat, lng: lng},
 				label: label,
-				map: map
+				map: map,
+				title: title
 			});
 			markers.push(marker);
 			marker.addListener('click', function() {
-				// if current_user (parking holder), release P
+				/* #TODO# if current_user (parking holder), release P
 				for (var i=0; i < markers.length; i++) {
 					if (markers[i] === marker) {
 						markers.splice(i, 1)
 						marker.setMap(null)
 						releaseSpot(lat, lng, map)
 					}
-				}
+				}*/
 				// otherwise (parking finder), claim it
+				unclaimSpot()
+				claimSpot(title)
+				marker.setLabel('M')
 			})
 		}
 
 		function addParking(lat, lng, map) {
-			addMarker(lat, lng, map, 'P');
 
 			// TODO: remove existing parking spot 
 			// since each user should have at most one
@@ -101,7 +107,7 @@
 		  	},
 		  	function(data, status) {
 		  		if (status == "success") {
-				  console.log(data.total);
+					addMarker(lat, lng, map, 'P', data.spot.id.toString());
 				}
 				else {
 				  console.log(status);
@@ -147,6 +153,47 @@
 		/* spot holder */
 
 		/* spot searcher */
+		function claimSpot(spot_id) {
+			saveTarget(spot_id, 1)
+		}
+
+		function unclaimSpot() {
+		  	$.ajax({
+		  		url: '/spots', 
+		  		type: 'GET',
+		  		data: {
+		  			user_id: 1
+		  		},
+		  		success: function(result) {
+		  			console.log(result.targets)
+		  			if (result.targets.length) {
+			  			unmarkSpot(result.targets[0])
+			  		}
+		  		}
+		  	});
+		}
+
+		function saveTarget(spot_id, target_id) {
+		  	$.ajax({
+		  		url: '/spots/' + spot_id, 
+		  		type: 'PUT',
+		  		data: {
+		  			target_id: target_id
+		  		},
+		  		success: function(result) {
+		  			console.log(result)
+		  		}
+		  	});
+		}
+
+		function unmarkSpot(target) {
+		  	saveTarget(target.id, null)
+		  	for (var i=0; i < markers.length; i++) {
+		  		if (markers[i].getTitle() == target.id.toString())
+		  			markers[i].setLabel('P')
+			}
+		}
+
 		function addTarget(lat, lng, map) {
 
 		  	$.post("/targets", 
