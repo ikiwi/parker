@@ -72,6 +72,17 @@
 				map: map
 			});
 			markers.push(marker);
+			marker.addListener('click', function() {
+				// if current_user (parking holder), release P
+				for (var i=0; i < markers.length; i++) {
+					if (markers[i] === marker) {
+						markers.splice(i, 1)
+						marker.setMap(null)
+						releaseSpot(lat, lng, map)
+					}
+				}
+				// otherwise (parking finder), claim it
+			})
 		}
 
 		function addParking(lat, lng, map) {
@@ -117,18 +128,21 @@
 			}
 		}
 
-		function releaseSpot() {
+		// eventually releaseSpot based on user_id instead of lat/lng,
+		// since each user can have at most one spot
+		function releaseSpot(lat, lng, map) {
 		  	$.ajax({
 		  		url: '/spots', 
 		  		type: 'DELETE',
 		  		data: {
-		  			user_id: 1
+		  			lat: lat,
+		  			lng: lng
 		  		},
 		  		success: function(result) {
 		  			console.log(result)
 		  		}
 		  	});
-		  	location.reload();
+		  	setMapOnAll(map)
 		}
 		/* spot holder */
 

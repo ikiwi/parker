@@ -12,7 +12,7 @@ class SpotsController < ApplicationController
 	end
 
 	def destroy
-		spot = Spot.where(user_id: params[:user_id]).destroy_all
+		spot = Spot.find_by(latitude: params[:lat], longitude: params[:lng]).destroy
 		render json: spot, except: [:created_at, :updated_at]
 	end
 
