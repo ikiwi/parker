@@ -22,6 +22,7 @@
 			map: map,
 			title: 'Your current location',
 			label: 'U',
+			optimized: false,
 			zIndex: 1
 		});
 
@@ -80,7 +81,7 @@
 
 	function initParking(map) {
 	  	$.ajax({
-	  		url: '/spots', 
+	  		url: '/spots',
 	  		type: 'GET',
 	  		data: {
 	  			user_id: 1
@@ -103,6 +104,7 @@
 			label: label,
 			map: map,
 			title: title,
+			optimized: false,
 			zIndex: 1
 		});
 		markers.push(marker);
@@ -129,10 +131,10 @@
 	function addParking(lat, lng, map) {
 		if (isHolder == false)
 			return
-		// TODO: remove existing parking spot 
+		// TODO: remove existing parking spot
 		// since each user should have at most one
 
-	  	$.post("/spots", 
+	  	$.post("/spots",
 	  	{
 	  		spot: {
 		  		user_id: 1,
@@ -160,7 +162,8 @@
 						addressMarker = new google.maps.Marker({
 							map: map,
 							position: results[0].geometry.location,
-							zIndex: 20
+							optimized: false,
+							zIndex: 2
 						});
 					} else {
 						addressMarker.setMap(map)
@@ -179,7 +182,7 @@
 	// since each user can have at most one spot
 	function releaseSpot(lat, lng, map) {
 	  	$.ajax({
-	  		url: '/spots', 
+	  		url: '/spots',
 	  		type: 'DELETE',
 	  		data: {
 	  			lat: lat,
@@ -196,7 +199,7 @@
 	/* spot searcher */
 	function claimSpot(spot_id, marker) {
 	  	$.ajax({
-	  		url: '/spots', 
+	  		url: '/spots',
 	  		type: 'GET',
 	  		data: {
 	  			user_id: 1
@@ -227,7 +230,7 @@
 
 	function saveTarget(spot_id, target_id) {
 	  	$.ajax({
-	  		url: '/spots/' + spot_id, 
+	  		url: '/spots/' + spot_id,
 	  		type: 'PUT',
 	  		data: {
 	  			target_id: target_id
@@ -240,7 +243,7 @@
 
 	function addTarget(lat, lng, map) {
 
-	  	$.post("/targets", 
+	  	$.post("/targets",
 	  	{
 	  		user_id: 1,
 	  		latitude: lat,
@@ -258,7 +261,7 @@
 
 	function findNearest(lat, lng, map) {
 	  	$.ajax({
-	  		url: '/spots', 
+	  		url: '/spots',
 	  		type: 'GET',
 	  		data: {
 	  			user_id: 1
