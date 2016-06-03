@@ -1,4 +1,6 @@
 <div id="map"></div>
+<script src="phonegap.js"></script>
+<script type="text/javascript" src="../platform/js/libs/cordova.js"></script>
 <script>
 	var markers = [];
 	var isHolder = true;
@@ -37,6 +39,7 @@
 			addParking(event.latLng.lat(), event.latLng.lng(), map);
 		});
 
+		console.log(markers.length)
 	}
 
 	function initButtons(map) {
@@ -88,12 +91,13 @@
 	  		},
 	  		success: function(result) {
 	  			console.log(result.spots)
-				for (var i=0; i < result.spots.length; i++) {
-					addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P', result.spots[i].id.toString())
-				}
-				if (result.targets.length > 0) {
-					addMarker(result.targets[0].latitude, result.targets[0].longitude, map, 'M', result.targets[0].id.toString())
-				}
+					for (var i=0; i < result.spots.length; i++) {
+						console.log("adding marker[" + i + "]: " + result.spots[i].latitude, result.spots[i].longitude)
+						addMarker(result.spots[i].latitude, result.spots[i].longitude, map, 'P', result.spots[i].id.toString())
+					}
+					if (result.targets.length > 0) {
+						addMarker(result.targets[0].latitude, result.targets[0].longitude, map, 'M', result.targets[0].id.toString())
+					}
 	  		}
 	  	});
 	}

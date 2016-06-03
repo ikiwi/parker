@@ -13,7 +13,7 @@
 
 ActiveRecord::Schema.define(version: 20160531020541) do
 
-  create_table "Spots", force: :cascade do |t|
+  create_table "spots", force: :cascade do |t|
     t.integer  "user_id"
     t.float    "latitude"
     t.float    "longitude"
