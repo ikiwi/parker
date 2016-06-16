@@ -1,28 +1,5 @@
-== README
+Runs best on chrome.
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
-
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-
-
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+There are two roles: parking-searchers and parking-holders.  This app would match parking-searchers and parking holders in the following way:
+1. allows holder of a parking space to communicate the position, on google map, of the space that they will be vacating,
+2. allows searcher to find available vacating parking spaces.
